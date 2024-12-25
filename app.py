@@ -103,4 +103,4 @@ def home():
     return "Welcome to the home page!"
 
 if __name__ == "__main__":
-    app.run(port=5000)
+    app.run(debug=True)
