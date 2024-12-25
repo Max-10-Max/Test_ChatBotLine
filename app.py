@@ -97,5 +97,10 @@ def handle_message(event):
             TextSendMessage(text="✅ Schedule added successfully!")
         )
 
+
+@app.route('/')
+def home():
+    return "Welcome to the home page!"
+
 if __name__ == "__main__":
     app.run(port=5000)
