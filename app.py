@@ -1,7 +1,7 @@
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
-from linebot.models import TextSendMessage, MessageEvent, TextMessage
+from linebot.models import TextSendMessage, MessageEvent, TextMessage, RichMenu, RichMenuArea, URIAction, QuickReply, QuickReplyButton, MessageAction
 import json
 import os
 from dotenv import load_dotenv
@@ -54,6 +54,34 @@ def callback():
 
     return "OK"
 
+# Function to create Rich Menu
+def create_rich_menu():
+    # Create Rich Menu
+    rich_menu = RichMenu(
+        size={"width": 2500, "height": 1686},
+        selected=False,
+        name="Identity Selection",
+        chat_bar_text="Tap to select identity",
+        areas=[
+            RichMenuArea(
+                bounds={"x": 0, "y": 0, "width": 2500, "height": 1686},
+                action=URIAction(label="Start Identity Selection", uri="line://app/your_deep_link_here")
+            )
+        ]
+    )
+    rich_menu_id = line_bot_api.create_rich_menu(rich_menu)
+
+    # Upload an image for the Rich Menu
+    with open("rich_menu_image.jpg", "rb") as f:
+        line_bot_api.set_rich_menu_image(rich_menu_id, "image/jpeg")
+
+    # Set Rich Menu alias
+    line_bot_api.set_rich_menu_alias(rich_menu_id, "identity_selection_alias")
+    return rich_menu_id
+
+# Create the rich menu when the app starts
+create_rich_menu()
+
 # Handle messages
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
@@ -80,6 +108,24 @@ def handle_message(event):
             TextSendMessage(text="เดียร์ เองจ้า")
         )
         return
+
+    if message_text.lower() == "identity":
+        # Ask for identity selection with Quick Reply
+        line_bot_api.reply_message(
+            event.reply_token,
+            TextSendMessage(
+                text="Please choose your role:",
+                quick_reply=QuickReply(
+                    items=[
+                        QuickReplyButton(action=MessageAction(label="STUDENT", text="STUDENT")),
+                        QuickReplyButton(action=MessageAction(label="INSTRUCTOR", text="INSTRUCTOR")),
+                        QuickReplyButton(action=MessageAction(label="GENERAL", text="GENERAL")),
+                        QuickReplyButton(action=MessageAction(label="STAFF", text="STAFF")),
+                        QuickReplyButton(action=MessageAction(label="ANONYMOUS", text="ANONYMOUS"))
+                    ]
+                )
+            )
+        )
 
     if message_text.lower().startswith("add schedule"):
         _, title, date, time = message_text.split("|")
